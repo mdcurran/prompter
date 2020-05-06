@@ -1,0 +1,17 @@
+version: "3"
+services:
+  server:
+    build: .
+    ports:
+      - 8080:8080
+    networks:
+      - internal
+  redis:
+    image: redis:latest
+    # command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - 6379:6379
+    networks:
+      - internal
+networks:
+  internal:
