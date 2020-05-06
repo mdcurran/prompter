@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/go-redis/redis"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -34,6 +35,40 @@ func Save(set string, tokens []string) error {
 	c := getClient()
 
 	err := c.SAdd(set, tokens).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// VerifyUser returns true if the user supplies a password matching the hash stored in Redis.
+func VerifyUser(email, password string) bool {
+	c := getClient()
+
+	hashed, err := c.HGet("users", email).Result()
+	if err != nil {
+		return false
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashed), []byte(password))
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+// AddUser adds an email and username entry to Redis.
+func AddUser(email, password string) error {
+	c := getClient()
+
+	hashed, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil
+	}
+
+	err = c.HSet("users", email, hashed).Err()
 	if err != nil {
 		return err
 	}
