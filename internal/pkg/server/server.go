@@ -16,35 +16,21 @@ import (
 // Server exposes HTTP endpoints and a structured logger.
 type Server struct {
 	Router *httprouter.Router
-	Logger *zap.SugaredLogger
 }
 
 // New instantiates an HTTP server + structured logger and builds a route table.
 func New() (*Server, error) {
-	l, err := logger()
-	if err != nil {
-		return nil, err
-	}
-
 	s := Server{
 		Router: httprouter.New(),
-		Logger: l,
 	}
 	s.buildRouteTable()
 
 	return &s, nil
 }
 
-func logger() (*zap.SugaredLogger, error) {
-	l, err := zap.NewProduction()
-	if err != nil {
-		return nil, err
-	}
-	return l.Sugar(), nil
-}
-
 func (s *Server) buildRouteTable() {
 	s.Router.GET("/liveness", s.liveness)
+	s.Router.GET("/readiness", s.readiness)
 	s.Router.POST("/save", s.save)
 	s.Router.GET("/get/:pos", s.get)
 	s.Router.POST("/user/add", s.addUser)
@@ -61,11 +47,22 @@ func encode(w http.ResponseWriter, code int, v interface{}) {
 	}
 }
 
+type health struct {
+	Message string `json:"message"`
+}
+
 func (s *Server) liveness(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	type response struct {
-		Message string `json:"message"`
+	encode(w, http.StatusOK, health{Message: "Application healthy!"})
+}
+
+func (s *Server) readiness(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	err := redis.Ping()
+	if err != nil {
+		Error(w, err, http.StatusServiceUnavailable)
+		return
 	}
-	encode(w, http.StatusOK, response{Message: "Application healthy!"})
+
+	encode(w, http.StatusOK, health{Message: "Application ready!"})
 }
 
 // vocabulary contains an array of tokens for a part of speech.
@@ -93,7 +90,7 @@ func (s *Server) save(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		return
 	}
 
-	s.Logger.Infof("saving tokens %v with part of speech %q", v.Tokens, v.PartOfSpeech)
+	zap.S().Infof("saving tokens %v with part of speech %q", v.Tokens, v.PartOfSpeech)
 	err = redis.Save(v.PartOfSpeech, v.Tokens)
 	if err != nil {
 		Error(w, err, http.StatusInternalServerError)
