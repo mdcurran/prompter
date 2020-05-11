@@ -59,7 +59,7 @@ func Save(set string, tokens []string) error {
 func Record(sentence string) error {
 	c := getClient()
 
-	err := c.SAdd("sentences", sentence).Err()
+	err := c.SAdd("sentence", sentence).Err()
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func Record(sentence string) error {
 func VerifyUser(email, password string) bool {
 	c := getClient()
 
-	hashed, err := c.HGet("users", email).Result()
+	hashed, err := c.HGet("user", email).Result()
 	if err != nil {
 		return false
 	}
@@ -93,7 +93,7 @@ func AddUser(email, password string) error {
 		return nil
 	}
 
-	err = c.HSet("users", email, hashed).Err()
+	err = c.HSet("user", email, hashed).Err()
 	if err != nil {
 		return err
 	}
