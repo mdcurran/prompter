@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	host   = "redis"
+	host   = "localhost"
 	port   = "6379"
 	db     = "0"
 	once   sync.Once
@@ -48,6 +48,18 @@ func Save(set string, tokens []string) error {
 	c := getClient()
 
 	err := c.SAdd(set, tokens).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Record saves a sentence to Redis.
+func Record(sentence string) error {
+	c := getClient()
+
+	err := c.SAdd("sentences", sentence).Err()
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"github.com/mdcurran/prompter/internal/pkg/server"
 )
 
-var rootCmd = &cobra.Command{
+var serverCmd = &cobra.Command{
 	Use:   "prompter",
 	Short: "prompter helps you learn to word good!",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -45,9 +45,8 @@ func logger() error {
 	return nil
 }
 
-// Execute is the main application entrypoint.
-func Execute() {
-	err := rootCmd.Execute()
+func main() {
+	err := serverCmd.Execute()
 	if err != nil {
 		panic(err)
 	}
